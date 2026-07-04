@@ -1,0 +1,192 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "mini_admin", "super_admin"] },
+        "phoneNumber": { "type": "string" },
+        "joinDate": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["email", "role", "joinDate"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "Favorite item",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["store", "product"] },
+        "targetId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["type", "targetId", "createdAt"]
+    },
+    "Store": {
+      "title": "Store",
+      "description": "Store information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "bannerUrl": { "type": "string" },
+        "gallery": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "workingHours": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "banned"] },
+        "createdAt": { "type": "string", "format": "timestamp" },
+        "updatedAt": { "type": "string", "format": "timestamp" },
+        "verifiedBadge": { "type": "boolean" },
+        "deliveryEnabled": { "type": "boolean" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" }
+      },
+      "required": ["name", "ownerId", "status", "createdAt", "updatedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Product details",
+      "type": "object",
+      "properties": {
+        "storeId": { "type": "string" },
+        "name": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "manufacturer": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "quantity": { "type": "number" },
+        "expirationDate": { "type": "string", "format": "timestamp" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "timestamp" },
+        "updatedAt": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["storeId", "name", "price", "quantity", "createdAt", "updatedAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Store review",
+      "type": "object",
+      "properties": {
+        "storeId": { "type": "string" },
+        "userId": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "reply": { "type": "string" },
+        "createdAt": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["storeId", "userId", "rating", "createdAt"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "Chat session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "storeId": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "lastMessageTime": { "type": "string", "format": "timestamp" },
+        "updatedAt": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["userId", "storeId", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "timestamp": { "type": "string", "format": "timestamp" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["senderId", "timestamp", "read"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "System activity log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "target": { "type": "string" },
+        "timestamp": { "type": "string", "format": "timestamp" }
+      },
+      "required": ["userId", "action", "timestamp"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "read": { "type": "boolean" },
+        "timestamp": { "type": "string", "format": "timestamp" },
+        "type": { "type": "string" }
+      },
+      "required": ["userId", "title", "read", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "users/{userId}/favorites/{favoriteId}": {
+      "schema": "Favorite",
+      "description": "User favorites"
+    },
+    "stores/{storeId}": {
+      "schema": "Store",
+      "description": "Stores"
+    },
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Products"
+    },
+    "reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Reviews"
+    },
+    "chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Chat sessions"
+    },
+    "chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages in chat"
+    },
+    "activity_logs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Activity logs"
+    },
+    "categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product categories"
+    },
+    "notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Notifications"
+    }
+  }
+}

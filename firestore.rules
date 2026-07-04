@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function existing() { return resource.data; }
+    function incoming() { return request.resource.data; }
+    
+    function getUserData() { 
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; 
+    }
+    function isSuperAdmin() { 
+      return isSignedIn() && getUserData().role == 'super_admin'; 
+    }
+    function isMiniAdmin() { 
+      return isSignedIn() && getUserData().role == 'mini_admin'; 
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        isSuperAdmin() || 
+        (
+          request.auth.uid == userId && (
+            (!('role' in incoming()) || incoming().role == existing().role) || 
+            (incoming().role == 'super_admin' && 
+             request.auth.token.email == 'saiynmiras@gmail.com' &&
+             get(/databases/$(database)/documents/settings/initialization).data.firstAdminUid == userId)
+          )
+        )
+      );
+      allow delete: if isSuperAdmin();
+
+      match /favorites/{favoriteId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+      
+      match /notifications/{notificationId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+    
+    match /stores/{storeId} {
+      allow read: if true; 
+      allow create: if isSignedIn() && (isSuperAdmin() || (isMiniAdmin() && incoming().ownerId == request.auth.uid));
+      allow update: if isSignedIn() && (
+        isSuperAdmin() || 
+        (isMiniAdmin() && existing().ownerId == request.auth.uid && incoming().ownerId == existing().ownerId && (!('status' in incoming()) || incoming().status == existing().status))
+      );
+      allow delete: if isSuperAdmin() || (isMiniAdmin() && existing().ownerId == request.auth.uid);
+    }
+    
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isSignedIn() && (isSuperAdmin() || (isMiniAdmin() && get(/databases/$(database)/documents/stores/$(incoming().storeId)).data.ownerId == request.auth.uid));
+      allow update: if isSignedIn() && (
+        isSuperAdmin() || 
+        (get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid && (!('storeId' in incoming()) || incoming().storeId == existing().storeId))
+      );
+      allow delete: if isSignedIn() && (isSuperAdmin() || get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid);
+    }
+    
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (isSuperAdmin() || get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+    }
+    
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && (isSuperAdmin() || existing().userId == request.auth.uid || get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (isSuperAdmin() || existing().userId == request.auth.uid || get(/databases/$(database)/documents/stores/$(existing().storeId)).data.ownerId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && (isSuperAdmin() || get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid || get(/databases/$(database)/documents/stores/$(get(/databases/$(database)/documents/chats/$(chatId)).data.storeId)).data.ownerId == request.auth.uid);
+        allow create: if isSignedIn() && incoming().senderId == request.auth.uid;
+        allow delete: if isSuperAdmin();
+      }
+    }
+    
+    match /activity_logs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if isSignedIn();
+    }
+    
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+    
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create: if settingId == 'initialization' && 
+                       isSignedIn() && 
+                       request.auth.token.email == 'saiynmiras@gmail.com' &&
+                       !exists(/databases/$(database)/documents/settings/initialization) && 
+                       incoming().firstAdminUid == request.auth.uid;
+      allow write: if isSuperAdmin();
+    }
+  }
+}
